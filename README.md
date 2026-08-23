@@ -1,48 +1,27 @@
-# OPBR Account Stock Website
+# OPBR Ikubaru — RD Accounts Stock
 
-## Setup
+Website storefront untuk jual-beli akun **One Piece Bounty Rush (OPBR)**, khususnya akun starter / RD (Ready Stock). Buyer bisa browsing stok akun, filter berdasarkan server, karakter extreme, jumlah diamond & gold fragment, lalu order langsung via WhatsApp ke admin.
 
-### 1. Database (Vercel Postgres)
-- Deploy ke Vercel dulu
-- Add Vercel Postgres integration → dapat DATABASE_URL
-- Set DATABASE_URL di Vercel Environment Variables
+## Fitur
 
-Atau buat manual di [Neon](https://neon.tech) (free 500MB):
-```bash
-# Set DATABASE_URL di .env.local
-DATABASE_URL="postgresql://user:pass@ep-xxx.us-east-2.aws.neon.tech/dbname"
-```
+- **Ready Stock** — daftar akun milik toko yang tersimpan di database. Admin bisa tambah/edit/hapus akun.
+- **Custom Request** — pencarian real-time ke vendor eksternal (shokan.org & OPBR vendor API) untuk akun sesuai permintaan buyer: pilih karakter extreme, range gold fragment, dan server.
+- **Filter & sortir lengkap** — server (Global/JP, Android/iOS), karakter extreme, diamond, GF, kode akun, dan jumlah karakter extreme (terbanyak/sedikit).
+- **Halaman detail akun** per akun (`/account/<kode>`).
+- **Dua bahasa** — Indonesia & English, bisa diganti dari header, tersimpan di browser.
+- **Panel admin** — login JWT, CRUD akun Ready Stock langsung dari halaman utama.
+- **Deteksi karakter extreme otomatis** — daftar karakter extreme diambil dari vendor API dengan fallback ke daftar bawaan.
 
-### 2. Install & Run
-```bash
-npm install
-npx prisma db push    # sync schema ke DB
-npm run seed           # seed karakter + admin (admin:admin123)
-npm run dev
-```
+## Teknologi
 
-### 3. Environment Variables
-Buat `.env.local`:
-```
-DATABASE_URL="postgresql://..."
-JWT_SECRET="your-random-secret"
-CRON_API_KEY="random-key-for-cron-auth"
-```
+| Bagian | Teknologi |
+|---|---|
+| Framework | Next.js 16 (App Router) + React 19 + TypeScript |
+| Styling | Tailwind CSS v4 |
+| Database | Neon Postgres + Prisma ORM |
+| Auth | JWT (httpOnly cookie) |
+| Deployment | Vercel |
 
-### 4. Admin Login
-- Buka `/admin/login`
-- Username: `admin`, Password: `admin123`
-- Ganti password setelah login pertama
+## Cara kerja singkat
 
-### 5. Sync Data
-- Klik "Sync Shokan" / "Sync OPBR Store" di halaman admin
-- Atau via cron (GitHub Actions): set `VERCEL_URL` dan `CRON_API_KEY` di GitHub Secrets
-
-## Deploy ke Vercel
-
-1. Push ke GitHub
-2. Import ke Vercel
-3. Add Vercel Postgres integration
-4. Set `JWT_SECRET` dan `CRON_API_KEY` di Environment Variables
-5. Deploy
-6. Buka terminal Vercel: `npx prisma db push && npm run seed`
+Akun Ready Stock disimpan di Postgres (model `Account`). Akun Custom Request **tidak** disimpan — hanya hasil pencarian live ke API vendor, diterjemahkan lewat layer mapping (`src/lib/mapping.ts`) yang menyamakan penamaan karakter antara DB, vendor China, dan shokan code. Semua request ke vendor melewati proxy route internal (`/api/proxy/*`), jadi browser tidak pernah kontak langsung ke vendor.
