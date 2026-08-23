@@ -440,7 +440,7 @@ export default function Home() {
               <>
             <label className="text-xs font-medium text-[var(--text-muted)] mb-2 block">{t(lang, "pilih_char")}{" "}{tab === "own" ? (exFilter === "ex" ? t(lang, "ada_extreme") : t(lang, "tanpa_extreme")) : lowRange ? t(lang, "gf_1000_3500") : t(lang, "custom_request")}</label>
             {apiMode && apiCharsLoading && <p className="text-xs text-[var(--text-muted)] mb-1">{t(lang, "memuat_char")}</p>}
-            <div className="grid grid-cols-8 sm:grid-cols-10 md:grid-cols-11 gap-1.5">
+            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-11 gap-1.5">
               {tab === "own" && exFilter === "ex" && (
                 <button
                   onClick={() => toggleChar("random")}
