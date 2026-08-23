@@ -24,4 +24,4 @@ Website storefront untuk jual-beli akun **One Piece Bounty Rush (OPBR)**, khusus
 
 ## Cara kerja singkat
 
-Akun Ready Stock disimpan di Postgres (model `Account`). Akun Custom Request **tidak** disimpan — hanya hasil pencarian live ke API vendor, diterjemahkan lewat layer mapping (`src/lib/mapping.ts`) yang menyamakan penamaan karakter antara DB, vendor China, dan shokan code. Semua request ke vendor melewati proxy route internal (`/api/proxy/*`), jadi browser tidak pernah kontak langsung ke vendor.
+Akun Ready Stock disimpan di Postgres (model `Account`). Akun Custom Request **tidak** disimpan — hanya hasil pencarian live ke API vendor, diterjemahkan lewat layer mapping (`src/lib/mapping.ts`) yang menyamakan penamaan karakter antara DB. Semua request ke vendor melewati proxy route internal (`/api/proxy/*`), jadi browser tidak pernah kontak langsung ke vendor.
