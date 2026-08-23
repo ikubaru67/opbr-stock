@@ -5,6 +5,7 @@ import { CHARACTERS, SERVERS, CHAR_IMAGE, RANDOM_IMG, RAINBOW_DIAMONDS_IMG, GOLD
 import { t } from "@/lib/i18n";
 import { useLang } from "@/lib/useLang";
 
+<<<<<<< HEAD
 const SERVER_LABEL_KEY: Record<ServerKey, string> = {
   android_global: "server_global_android",
   ios_global: "server_global_ios",
@@ -12,6 +13,8 @@ const SERVER_LABEL_KEY: Record<ServerKey, string> = {
   ios_jp: "server_jp_ios",
 };
 
+=======
+>>>>>>> 12ef8f6c0f54883dba0915d3c9177b07c474e4d5
 type Tab = "own" | "customv2";
 type GFRange = "" | "1000-3500" | "5600-6400" | "6400-6800" | "7800+";
 type ExtremeFilter = "noex" | "ex";
@@ -380,9 +383,21 @@ export default function Home() {
                 onChange={(e) => setSelectedServer(e.target.value as ServerKey | "")}
               >
                 <option value="">{t(lang, "all_servers")}</option>
+<<<<<<< HEAD
                 {(tab === "customv2" && !lowRange ? SERVERS.filter((s, i, a) => a.findIndex((x) => x.key === s.key || getOpbrServer([s.key]) === getOpbrServer([x.key])) === i) : SERVERS).map((s) => (
                   <option key={s.key} value={s.key}>{t(lang, SERVER_LABEL_KEY[s.key])}</option>
                 ))}
+=======
+                {(tab === "customv2" && !lowRange ? SERVERS.filter((s, i, a) => a.findIndex((x) => x.key === s.key || getOpbrServer([s.key]) === getOpbrServer([x.key])) === i) : SERVERS).map((s) => {
+                  const labelKey = s.key.startsWith("android_global") || s.key.startsWith("ios_global")
+                    ? "server_global_android"
+                    : "server_jp_android";
+                  const shown = tab === "customv2" && !lowRange
+                    ? (s.label.includes("Global") ? t(lang, "server_global_android") : t(lang, "server_jp_android"))
+                    : t(lang, labelKey);
+                  return <option key={s.key} value={s.key}>{shown}</option>;
+                })}
+>>>>>>> 12ef8f6c0f54883dba0915d3c9177b07c474e4d5
               </select>
             </div>
             <div>
@@ -839,7 +854,11 @@ export default function Home() {
                   onChange={(e) => setForm({ ...form, code: e.target.value })} required />
                 <select className="px-3 py-2.5 bg-[var(--surface-alt)] border border-[var(--border)] rounded-xl text-sm text-[var(--text)]" value={form.server}
                   onChange={(e) => setForm({ ...form, server: e.target.value })}>
+<<<<<<< HEAD
                   {SERVERS.map((s) => <option key={s.key} value={s.label}>{t(lang, SERVER_LABEL_KEY[s.key])}</option>)}
+=======
+                  {SERVERS.map((s) => <option key={s.key} value={s.label}>{t(lang, s.key.startsWith("android_global") || s.key.startsWith("ios_global") ? "server_global_android" : "server_jp_android")}</option>)}
+>>>>>>> 12ef8f6c0f54883dba0915d3c9177b07c474e4d5
                 </select>
                 <div className="col-span-2">
                   <label className="text-xs font-medium text-[var(--text-muted)] mb-1.5 block">{t(lang, "char_extreme_form")}</label>
