@@ -1,0 +1,56 @@
+generator app {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+generator seed {
+  provider = "prisma-client"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Account {
+  id         String   @id @default(cuid())
+  code       String   @unique
+  server     String
+  characters String[]
+  diamonds      Int      @default(0)
+  fragments     Int      @default(0)
+  diamondsText  String   @default("")
+  fragmentsText String   @default("")
+  price      Int      @default(0) // IDR
+  priceUsd   Int      @default(0) // USD cents (×100), 0 = tak diisi
+  priceUsdText String @default("") // USD exact text, cth "0.70"
+  char6      String   @default("")
+  source     String   @default("own") // "own" | "shokan" | "opbr"
+  status     String   @default("available") // "available" | "sold"
+  os         String   @default("")
+  loginVia   String   @default("")
+  randomCount Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([server])
+  @@index([status])
+  @@index([source])
+  @@index([code])
+}
+
+model Character {
+  id         Int     @id @default(autoincrement())
+  name       String  @unique
+  shokanCode String?
+  imageUrl   String?
+  server     String?
+  sortOrder  Int     @default(0)
+}
+
+model User {
+  id            String @id @default(cuid())
+  username      String @unique
+  passwordHash  String
+  createdAt     DateTime @default(now())
+}

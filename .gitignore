@@ -39,3 +39,17 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/src/generated/prisma
+
+# project-specific (local tooling & temp)
+.claude/
+.claude-backup-ruflo/
+.claude-flow/
+.mcp.json
+.opencode/
+dev.log
+dev-err.log
+devlog.txt
+ruvector.db
+public/screenshot*.png
