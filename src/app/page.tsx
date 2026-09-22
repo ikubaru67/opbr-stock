@@ -21,12 +21,24 @@ const TABS: { key: Tab; labelKey: string }[] = [
   { key: "customv2", labelKey: "custom_request" },
 ];
 
-const GF_TABS: { key: GFRange; labelKey: string; min?: number; max?: number; price?: string }[] = [
-  { key: "1000-3500", labelKey: "gf_1000_3500", min: 1000, max: 3500 },
-  { key: "5600-6400", labelKey: "gf_5600_6400", min: 5600, max: 6400, price: "4400钻石/5600-6400金碎片起带35个6星" },
-  { key: "6400-6800", labelKey: "gf_6400_6800", min: 6400, max: 6800, price: "4600钻石/6400-6800金碎片起带35个6星" },
-  { key: "7800+", labelKey: "gf_7800", min: 7800, price: "4400钻石/7800金碎片起 带50个6星" },
+// Fallback bila /api/proxy/prices gagal — sinkron dgn getPriceConfig situs asli.
+const GF_TAB_FALLBACK: { key: string; label: string; price?: string }[] = [
+  { key: "1000-3500", label: "1000-3500+ GF" },
+  { key: "5600-6400", label: "5700-6500 GF", price: "4400钻石/5700-6500金碎片起带35个6星" },
+  { key: "6400-6800", label: "6500-7000+ GF", price: "4600钻石/6500-7000金碎片起带35个6星" },
+  { key: "7800+", label: "8300+ GF", price: "4400钻石/8300金碎片起 带50个6星" },
 ];
+
+// ponytail: tier vendor beda per server; fallback JP statis.
+// upgrade path: hapus fallback bila getPriceConfig stabil.
+const GF_TAB_FALLBACK_JP: { key: string; label: string; price?: string }[] = [
+  { key: "1000-3500", label: "1000-3500+ GF" },
+  { key: "5900-6600", label: "5900-6600 GF", price: "4400钻石/5900-6600金碎片起 带35个6星" },
+  { key: "6600-7100", label: "6600-7100 GF", price: "4600钻石/6600-7100金碎片起 带35个6星" },
+  { key: "8100+", label: "8100+ GF", price: "4100钻石/8100金碎片起 带50个6星" },
+];
+
+interface GfTab { key: string; label: string; price?: string; builtin: boolean; }
 
 const EX_TABS: { key: ExtremeFilter; labelKey: string }[] = [
   { key: "noex", labelKey: "tanpa_extreme" },
@@ -51,7 +63,10 @@ const SERVER_COLORS: Record<string, string> = {
 export default function Home() {
   const { lang, setLang } = useLang();
   const [tab, setTab] = useState<Tab>("own");
-  const [gfRange, setGfRange] = useState<GFRange>("5600-6400");
+  const [gfRange, setGfRange] = useState<string>("5600-6400");
+  const [gfTabs, setGfTabs] = useState<GfTab[]>(GF_TAB_FALLBACK.map((g) => ({ ...g, builtin: true })));
+  const [gfTabsLoading, setGfTabsLoading] = useState(false);
+  const [gfTabsStale, setGfTabsStale] = useState(false);
   const [exFilter, setExFilter] = useState<ExtremeFilter>("ex");
   const [accounts, setAccounts] = useState<ProxyAccount[]>([]);
   const [total, setTotal] = useState(0);
@@ -66,6 +81,7 @@ export default function Home() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [minCharError, setMinCharError] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const lowRange = gfRange === "1000-3500";
   const apiMode = tab === "customv2" && !lowRange;
   const [apiChars, setApiChars] = useState<ApiChar[] | null>(null);
@@ -91,6 +107,56 @@ export default function Home() {
       .then((d) => setAdmin(!!d.admin))
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (tab !== "customv2") return;
+    let cancelled = false;
+    setGfTabsLoading(true);
+    // ponytail: tier vendor beda per server (international vs japan).
+    // upgrade path: cache per server di module scope seperti cachedApiChars.
+    const vendorServer = getOpbrServer(selectedServer ? [selectedServer] : []);
+    const fb = vendorServer === "japan" ? GF_TAB_FALLBACK_JP : GF_TAB_FALLBACK;
+    fetch(`/api/proxy/prices?server=${vendorServer}`, { cache: "no-store" })
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return;
+        const prices: string[] = Array.isArray(data?.prices) ? data.prices : [];
+        if (!prices.length) {
+          setGfTabs(fb.map((g) => ({ ...g, builtin: true })));
+          setGfTabsStale(true);
+          if (!fb.some((g) => g.key === gfRange)) {
+            setGfRange(fb[1]?.key ?? "1000-3500");
+            setSelectedChars([]); setAccounts([]); setHasSearched(false); setPage(1); setTotalPages(0);
+          }
+          return;
+        }
+        // ponytail: label ambil rentang GF dari string price vendor (regex 金碎片);
+        // upgrade path: endpoint vendor khusus yg kirim {label, price} terpisah.
+        const tabs: GfTab[] = [
+          { key: "1000-3500", label: "1000-3500+ GF", builtin: true },
+          ...prices.map((p) => {
+            const m = p.match(/(\d+)\s*[-~～]\s*(\d+)?\s*金碎片|(\d+)\s*金碎片/);
+            const label = m ? (m[1] && m[2] ? `${m[1]}-${m[2]} GF` : `${m[1] || m[3]}+ GF`) : p.slice(0, 20);
+            return { key: p, label, price: p, builtin: false };
+          }),
+        ];
+        setGfTabs(tabs);
+        setGfTabsStale(false);
+        if (!tabs.some((g) => g.key === gfRange)) {
+          setGfRange(tabs[1]?.key ?? "1000-3500");
+          setSelectedChars([]); setAccounts([]); setHasSearched(false); setPage(1); setTotalPages(0);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setGfTabs(fb.map((g) => ({ ...g, builtin: true })));
+          setGfTabsStale(true);
+        }
+      })
+      .finally(() => { if (!cancelled) setGfTabsLoading(false); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, selectedServer]);
 
   useEffect(() => {
     if (!apiMode) return;
@@ -120,7 +186,7 @@ export default function Home() {
       setTimeout(() => setMinCharError(false), 3000);
       return;
     }
-    setLoading(true); setHasSearched(true);
+    setLoading(true); setHasSearched(true); setSearchError(null);
     const p = targetPage ?? 1;
     try {
       if (tab === "own") {
@@ -140,19 +206,44 @@ export default function Home() {
         setAccounts(list);
         setTotal(data.total || 0);
       } else {
-        const gf = GF_TABS.find((g) => g.key === gfRange);
+        const gf = gfTabs.find((g) => g.key === gfRange);
         const body: Record<string, unknown> = { servers: selectedServer ? [selectedServer] : [], characters: selectedChars, search: searchTerm, page: p, sortOrder };
         if (sortBy) body.sortBy = sortBy;
-        if (!lowRange) { body.minGf = gf?.min; body.maxGf = gf?.max; body.price = gf?.price; }
-        const res = await fetch(`/api/proxy/${lowRange ? "customv1" : "customv2"}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-        const data = await res.json();
-        setAccounts(data.accounts || []); setTotal(data.total || 0); setTotalPages(data.totalPages || 0); setPage(p);
+        if (!lowRange) { body.price = gf?.price ?? (gfRange.includes("金碎片") ? gfRange : undefined); }
+
+        // Retry up to 2 times for vendor proxy calls
+        let data: Record<string, unknown> | null = null;
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          const res = await fetch(`/api/proxy/${lowRange ? "customv1" : "customv2"}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+          const json = await res.json();
+          if (json.error) {
+            if (attempt < 2) await new Promise((r) => setTimeout(r, 2000));
+            continue;
+          }
+          data = json;
+          break;
+        }
+
+        if (data && !data.error) {
+          setAccounts((data.accounts as ProxyAccount[]) || []);
+          setTotal((data.total as number) || 0);
+          setTotalPages((data.totalPages as number) || 0);
+          setPage(p);
+        } else {
+          setAccounts([]);
+          setTotal(0);
+          setTotalPages(0);
+          setSearchError(t(lang, "err_search_failed"));
+        }
       }
-    } catch { setAccounts([]); setTotal(0); setTotalPages(0); }
+    } catch {
+      setAccounts([]); setTotal(0); setTotalPages(0);
+      setSearchError(t(lang, "err_search_failed"));
+    }
     finally { setLoading(false); }
   }, [tab, gfRange, exFilter, selectedServer, selectedChars, searchTerm, sortBy, sortOrder]);
 
@@ -350,23 +441,27 @@ export default function Home() {
           </div>
         )}
 
-        {/* GF sub-tabs */}
+        {/* GF sub-tabs — daftar price tier dibaca dari vendor via /api/proxy/prices */}
         {tab === "customv2" && (
-          <div className="flex gap-2 mb-4">
-            {GF_TABS.map((g) => (
-              <button
-                key={g.key}
-                onClick={() => { setGfRange(g.key); setSelectedChars([]); setAccounts([]); setHasSearched(false); setPage(1); setTotalPages(0); }}
-                className={`px-4 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
-                  gfRange === g.key
-                    ? "bg-[var(--accent)] text-[#080e1a] border-[var(--accent)]"
-                    : "bg-transparent border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)] hover:border-[var(--accent)]"
-                }`}
-              >
-                {t(lang, g.labelKey)}
-              </button>
-            ))}
-          </div>
+          <>
+            <div className="flex gap-2 mb-4 flex-wrap">
+              {gfTabs.map((g) => (
+                <button
+                  key={g.key}
+                  onClick={() => { setGfRange(g.key); setSelectedChars([]); setAccounts([]); setHasSearched(false); setPage(1); setTotalPages(0); setSearchError(null); }}
+                  className={`px-4 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+                    gfRange === g.key
+                      ? "bg-[var(--accent)] text-[#080e1a] border-[var(--accent)]"
+                      : "bg-transparent border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)] hover:border-[var(--accent)]"
+                  }`}
+                >
+                  {g.label}
+                </button>
+              ))}
+            </div>
+            {gfTabsLoading && admin && <p className="text-xs text-[var(--text-muted)] mb-2">{t(lang, "memuat_tier")}</p>}
+            {gfTabsStale && admin && <p className="text-xs text-amber-400 mb-2">{t(lang, "tier_gagal")}</p>}
+          </>
         )}
 
         {/* Filter Bar */}
@@ -466,7 +561,7 @@ export default function Home() {
                 : CHARACTERS.map((c) => ({ key: c, hasMapping: true as const }))
               ).map((ch) => {
                 const key = ch.key as CharKey;
-                const unavailable = lowRange ? !hasShokanCode(key) : false;
+                const unavailable = apiMode ? !ch.hasMapping : lowRange ? !hasShokanCode(key) : false;
                 const imgUrl = CHAR_IMAGE[key];
                 return (
                   <button
@@ -516,6 +611,13 @@ export default function Home() {
         {minCharError && (
           <div className="bg-red-900/30 border border-red-700 rounded-2xl p-4 mb-4 text-center animate-[fadeInUp_0.2s_ease-out]">
             <p className="text-sm text-red-400 font-medium">{t(lang, "err_min_2")}</p>
+          </div>
+        )}
+
+        {/* Search error */}
+        {searchError && !loading && (
+          <div className="bg-red-900/30 border border-red-700 rounded-2xl p-4 mb-4 text-center animate-[fadeInUp_0.2s_ease-out]">
+            <p className="text-sm text-red-400 font-medium">{searchError}</p>
           </div>
         )}
 

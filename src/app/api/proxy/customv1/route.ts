@@ -19,10 +19,19 @@ async function fetchShokan(params: URLSearchParams, p: number): Promise<{ valid:
   pParams.set("page", String(p));
   const r = await fetch(`${SHOKAN_URL}/getAccount`, {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "Accept": "application/json",
+      "User-Agent": "Mozilla/5.0",
+    },
     body: pParams.toString(),
     signal: AbortSignal.timeout(15000),
   });
+  if (!r.ok) {
+    const text = await r.text().catch(() => "");
+    console.error(`[customv1] Shokan API error p=${p}: ${r.status} ${text.slice(0, 200)}`);
+    return { valid: false as const, content: [], pages: 0, pageNum: p };
+  }
   return r.json();
 }
 
@@ -46,7 +55,8 @@ export async function POST(req: NextRequest) {
     // Fetch page 1 first to get total pages count
     const first = await fetchShokan(params, 1);
     if (!first.valid || !first.content) {
-      return NextResponse.json({ accounts: [], total: 0, page, totalPages: 0 });
+      console.error("[customv1] Shokan API returned invalid first page");
+      return NextResponse.json({ error: "Shokan API returned invalid response" }, { status: 502 });
     }
 
     const totalPagesFromVendor = first.pages || 1;
@@ -85,6 +95,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ accounts, total, page, totalPages });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Proxy failed";
+    console.error("[customv1] Error:", msg);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

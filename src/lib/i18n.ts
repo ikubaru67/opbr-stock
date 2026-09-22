@@ -9,9 +9,11 @@ const ID: Dict = {
   tanpa_extreme: "Tanpa Extreme",
   ada_extreme: "Ada Extreme",
   gf_1000_3500: "1000-3500+ GF",
-  gf_5600_6400: "5600-6400 GF",
-  gf_6400_6800: "6400-6800 GF",
+  gf_5600_6400: "5700-6500 GF",
+  gf_6400_6800: "6500-7000+ GF",
   gf_7800: "7800+ GF",
+  memuat_tier: "Memuat pilihan GF...",
+  tier_gagal: "Gagal memuat pilihan GF dari vendor, memakai daftar bawaan",
 
   // Header
   title: "OPBR Ikubaru - RD Accounts Stock",
@@ -48,6 +50,7 @@ const ID: Dict = {
   min_2_char_search: "Pilih minimal 2 Karakter Extreme untuk mencari",
   max_2_char_own: "Maksimal 2 Karakter Extreme terpilih",
   err_min_2: "Harus pilih minimal 2 Karakter Extreme terlebih dahulu",
+  err_search_failed: "Gagal menghubungi server vendor. Silakan coba lagi dalam beberapa saat.",
 
   // Results
   mencari: "Mencari akun...",
@@ -146,9 +149,11 @@ const EN: Dict = {
   tanpa_extreme: "No Extreme",
   ada_extreme: "Has Extreme",
   gf_1000_3500: "1000-3500+ GF",
-  gf_5600_6400: "5600-6400 GF",
-  gf_6400_6800: "6400-6800 GF",
+  gf_5600_6400: "5700-6500 GF",
+  gf_6400_6800: "6500-7000+ GF",
   gf_7800: "7800+ GF",
+  memuat_tier: "Loading GF options...",
+  tier_gagal: "Failed to load GF options from vendor, using built-in list",
 
   title: "OPBR Ikubaru - RD Accounts Stock",
   tagline: "One Piece Bounty Rush — Ready-to-Play Starter Accounts",
@@ -182,6 +187,7 @@ const EN: Dict = {
   min_2_char_search: "Select at least 2 Extreme Characters to search",
   max_2_char_own: "Maximum 2 Extreme Characters selected",
   err_min_2: "Please select at least 2 Extreme Characters first",
+  err_search_failed: "Failed to reach the vendor server. Please try again in a moment.",
 
   mencari: "Searching accounts...",
   mulai_cari: "Pick filters and click Search Accounts to start",

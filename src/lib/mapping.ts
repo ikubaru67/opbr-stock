@@ -115,7 +115,7 @@ export const CHAR_TO_SHOKAN: Record<CharKey, string | null> = {
   "Zoro Sanji": "A-3636",
   "Zephyr": null,
   "Mars": "A-3737",
-  "Bonney": null,
+  "Bonney": "A-3838",
 };
 
 export const CHAR_TO_CN: Record<CharKey, string> = {
@@ -152,7 +152,7 @@ export const CHAR_TO_CN: Record<CharKey, string> = {
   "Law Runner": "红罗",
   "Zoro Sanji": "双翼",
   "Zephyr": "泽法",
-  "Mars": "火星",
+  "Mars": "蛇鸟",
   "Bonney": "波妮",
 };
 
@@ -230,6 +230,25 @@ export function buildOpbrChars(characters: CharKey[]): string {
   return names.join("-");
 }
 
+// Alias CN lain utk karakter yg mapping utamanya beda dgn vendor /search.
+const CN_ALIAS_FOR_VENDOR: Record<string, string[]> = {
+  "Rob Lucci": ["罗布", "路奇"],
+};
+
+/** Kandidat query `characters` per pilihan user: nama utama + alias vendor. */
+export function buildOpbrCharsCandidates(chars: string[]): string[] {
+  const mains = chars.map((c) => CHAR_TO_CN[c as CharKey] ?? c);
+  const out = new Set<string>([mains.join("-")]);
+  chars.forEach((c, i) => {
+    for (const alias of CN_ALIAS_FOR_VENDOR[c] ?? []) {
+      const alt = [...mains];
+      alt[i] = alias;
+      out.add(alt.join("-"));
+    }
+  });
+  return [...out];
+}
+
 export function getOpbrServer(servers: ServerKey[]): string {
   if (servers.length === 0) return "international";
   const sv = SERVERS.find((s) => s.key === servers[0]);
@@ -292,10 +311,9 @@ export function getApiCharacters(list: { name: string }[]): ApiChar[] {
 }
 
 export function buildOpbrCharsAny(chars: string[]): string {
-  return chars.map((c) => {
-    if (c === "Mars") return "蛇鸟"; // API vendor pakai 蛇鸟 untuk Mars
-    return CHAR_TO_CN[c as CharKey] ?? c;
-  }).join("-");
+  // ponytail: kirim apa adanya (EN lolos = vendor nol hasil, dicek route).
+  // upgrade path: return {param, unmapped[]} agar UI bisa sebutkan char yg gagal.
+  return chars.map((c) => CHAR_TO_CN[c as CharKey] ?? c).join("-");
 }
 
 export function detectServerColor(rolesStr: string): string {

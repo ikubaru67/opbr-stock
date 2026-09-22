@@ -14,7 +14,7 @@ const characters = [
   "S-Snake", "Garp", "Rob Lucci", "Kuzan", "Sabo", "Blue Shanks",
   "Oden", "Akainu", "Blue Bigmom Runner", "BlackBeard V1", "BlackBeard V2",
   "Bigmom Onigashima", "Saturn", "Nusjuro", "Law Runner", "Zoro Sanji",
-  "Zephyr", "Mars",
+  "Zephyr", "Mars", "Bonney",
 ];
 
 async function main() {
