@@ -902,7 +902,7 @@ export default function Home() {
                     ...modalAccount.characters,
                     ...(modalAccount.loginVia ? [`${t(lang, "wa_login")} ${modalAccount.loginVia}`] : []),
                     ...(modalAccount.os ? [modalAccount.os] : []),
-                    ...(((modalAccount.price ?? 0) > 0 || (modalAccount.priceUsd ?? 0) > 0) ? [
+                    ...((modalAccount.source !== "customv2" && ((modalAccount.price ?? 0) > 0 || (modalAccount.priceUsd ?? 0) > 0)) ? [
                       t(lang, "wa_harga"),
                       `Rp ${(modalAccount.price ?? 0).toLocaleString("id-ID")} | ${formatUsdDisplay(modalAccount.priceUsd, modalAccount.priceUsdText)}`,
                     ] : []),
